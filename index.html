@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>目標マンダラチャート</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <style>
+    :root {
+      color: #173452;
+      background: #f4f7fb;
+      font-family: system-ui, sans-serif;
+    }
+    body {
+      display: grid;
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0;
+      place-items: center;
+    }
+    main {
+      box-sizing: border-box;
+      width: min(100%, 30rem);
+      padding: 2rem 1.25rem;
+      text-align: center;
+    }
+    h1 { font-size: clamp(1.45rem, 5vw, 2rem); margin: 1rem 0; }
+    img { display: block; width: 88px; height: 88px; margin: auto; border-radius: 19px; }
+    p { margin: 1rem 0 0; line-height: 1.7; }
+    a {
+      display: inline-grid;
+      place-items: center;
+      box-sizing: border-box;
+      min-height: 48px;
+      padding: .65rem 1.35rem;
+      border-radius: .65rem;
+      background: #264e7e;
+      color: #fff;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    a:focus-visible { outline: 3px solid #264e7e; outline-offset: 4px; }
+    [hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="icons/icon-192.png" alt="" width="88" height="88">
+    <h1>目標マンダラチャート</h1>
+    <a id="open-app" rel="noreferrer" hidden>チャートを開く</a>
+    <p id="launch-message" role="status">指定された起動用リンクを開いてください。</p>
+  </main>
+  <script>
+    const approvedDigest = '007d9741c8729a2a7322538bb179fd3c5b6c0764304116ff5810c656c0276bab';
+    const link = document.querySelector('#open-app');
+    const message = document.querySelector('#launch-message');
+
+    async function updateLaunchLink() {
+      const fragment = location.hash;
+      const deploymentId = fragment.slice(1);
+      link.hidden = true;
+      link.removeAttribute('href');
+      message.hidden = false;
+      message.textContent = '指定された起動用リンクを開いてください。';
+      if (!/^AKfycb[A-Za-z0-9_-]{66}$/.test(deploymentId) || !crypto.subtle) return;
+
+      const digestBytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(deploymentId));
+      const digest = Array.from(new Uint8Array(digestBytes), byte => byte.toString(16).padStart(2, '0')).join('');
+      if (fragment !== location.hash || digest !== approvedDigest) return;
+
+      link.href = 'https://script.google.com/macros/s/' + deploymentId + '/exec';
+      link.hidden = false;
+      message.textContent = 'iPhoneではSafariの共有メニューから、このページをホーム画面に追加できます。';
+    }
+
+    function refreshLaunchLink() {
+      updateLaunchLink().catch(() => {
+        // The launch button remains unavailable when validation cannot finish.
+      });
+    }
+
+    window.addEventListener('hashchange', refreshLaunchLink);
+    refreshLaunchLink();
+  </script>
+</body>
+</html>
